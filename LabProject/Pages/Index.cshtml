@@ -46,7 +46,7 @@
                             </div>
                             <div class="mb-3">
                                 <label asp-for="NewClass.StudentCount" class="form-label">Student Count</label>
-                                <input asp-for="NewClass.StudentCount" class="form-control" type="number" required>
+                                <input asp-for="NewClass.StudentCount" class="form-control" type="number" min="1" max="100" required>
                                 <span asp-validation-for="NewClass.StudentCount" class="text-danger"></span>
                             </div>
                             <div class="mb-3">
