@@ -9,6 +9,100 @@ obj/
 *.sln.docstates
 *.userprefs
 
+# Visual Studio Code files
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# Visual Studio Trace Files
+*.e2e
+
+# NuGet Packages
+*.nupkg
+# NuGet Symbol Packages
+*.snupkg
+# The packages folder can be ignored because of Package Restore
+**/[Pp]ackages/*
+# except build/, which is used as an MSBuild target.
+!**/[Pp]ackages/build/
+# Uncomment if necessary however generally it will be regenerated when needed
+#!**/[Pp]ackages/repositories.config
+# NuGet v3's project.json files produces more ignorable files
+*.nuget.props
+*.nuget.targets
+
+# Visual Studio cache files
+# files ending in .cache can be ignored
+*.[Cc]ache
+# but keep track of directories ending in .cache
+!?*.[Cc]ache/
+
+# Others
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+
+# IDE - JetBrains Rider
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -26,11 +120,10 @@ msbuild.err
 msbuild.wrn
 
 # Visual Studio Code
-.vscode/
 *.code-workspace
 
 # Rider
-.idea/
+*.sln.iml
 
 # User-specific files
 *.rsuser
@@ -39,18 +132,40 @@ msbuild.wrn
 *.userosscache
 *.sln.docstates
 
-# NuGet
-*.nuget.props
-*.nuget.targets
-project.lock.json
-project.fragment.lock.json
-artifacts/
+# Logs
+logs/
+*.log
+npm-debug.log*
 
-# Tye
-.tye/
+# Dependency directories
+node_modules/
+jspm_packages/
 
-# .NET Scaffolding
-ScaffoldingReadMe.txt
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.test
+.env.production
+
+# Visual Studio Code workspace settings
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
 
 # Windows image file caches
 Thumbs.db
@@ -62,9 +177,6 @@ Desktop.ini
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
-# VS Code directories
-.vscode/
-
 # Windows Installer files
 *.cab
 *.msi
@@ -75,7 +187,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # JetBrains Rider
-.idea/
 *.sln.iml
 
 # ASP.NET Scaffolding
@@ -118,11 +229,6 @@ jspm_packages/
 .env.production
 
 # Visual Studio Code workspace settings
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 *.code-workspace
 
 # Local History for Visual Studio Code
