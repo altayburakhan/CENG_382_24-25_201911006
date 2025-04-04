@@ -1,42 +1,53 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using LabProject.Models;
+using System.Linq;
 
 namespace LabProject.Pages
 {
     public class IndexModel : PageModel
     {
         private readonly ILogger<IndexModel> _logger;
-        public List<ClassInformationModel> Classes { get; set; }
+        public List<ClassInformationTable> Classes { get; set; }
         public ClassInformationModel NewClass { get; set; } = new();
         public ClassInformationModel? EditingClass { get; set; }
         private static int _nextId = 1;
         private static List<ClassInformationModel> _classes = new();
         private static bool _isInitialized = false;
 
+        // Pagination properties
+        [BindProperty(SupportsGet = true)]
+        public int CurrentPage { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalPages { get; set; }
+
+        // Filter properties
+        [BindProperty(SupportsGet = true)]
+        public string? ClassNameFilter { get; set; }
+        [BindProperty(SupportsGet = true)]
+        public int? MinStudentCount { get; set; }
+        [BindProperty(SupportsGet = true)]
+        public int? MaxStudentCount { get; set; }
+
         public IndexModel(ILogger<IndexModel> logger)
         {
             _logger = logger;
-            Classes = _classes;
+            Classes = new List<ClassInformationTable>();
             
             // Sample data for initial load - only once
             if (!_isInitialized)
             {
-                _classes.Add(new ClassInformationModel
+                var random = new Random();
+                for (int i = 0; i < 100; i++)
                 {
-                    Id = _nextId++,
-                    ClassName = "CENG 101",
-                    StudentCount = 30,
-                    Description = "Introduction to Programming"
-                });
-
-                _classes.Add(new ClassInformationModel
-                {
-                    Id = _nextId++,
-                    ClassName = "CENG 102",
-                    StudentCount = 25,
-                    Description = "Object-Oriented Programming"
-                });
+                    _classes.Add(new ClassInformationModel
+                    {
+                        Id = _nextId++,
+                        ClassName = $"CENG {random.Next(100, 500)}",
+                        StudentCount = random.Next(20, 50),
+                        Description = $"Description for class {i + 1}"
+                    });
+                }
 
                 _isInitialized = true;
             }
@@ -46,13 +57,51 @@ namespace LabProject.Pages
         {
             if (editId.HasValue)
             {
-                EditingClass = Classes.FirstOrDefault(c => c.Id == editId.Value);
+                EditingClass = _classes.FirstOrDefault(c => c.Id == editId.Value);
             }
             else
             {
                 // Reset NewClass when not editing
                 NewClass = new ClassInformationModel();
             }
+
+            // Apply filters
+            var filteredClasses = _classes.AsQueryable();
+
+            if (!string.IsNullOrEmpty(ClassNameFilter))
+            {
+                filteredClasses = filteredClasses.Where(c => 
+                    c.ClassName.Contains(ClassNameFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (MinStudentCount.HasValue)
+            {
+                filteredClasses = filteredClasses.Where(c => c.StudentCount >= MinStudentCount.Value);
+            }
+
+            if (MaxStudentCount.HasValue)
+            {
+                filteredClasses = filteredClasses.Where(c => c.StudentCount <= MaxStudentCount.Value);
+            }
+
+            // Calculate pagination
+            TotalPages = (int)Math.Ceiling(filteredClasses.Count() / (double)PageSize);
+            CurrentPage = Math.Max(1, Math.Min(CurrentPage, TotalPages));
+
+            // Apply pagination
+            var paginatedClasses = filteredClasses
+                .Skip((CurrentPage - 1) * PageSize)
+                .Take(PageSize)
+                .Select(c => new ClassInformationTable
+                {
+                    Id = c.Id,
+                    ClassName = c.ClassName,
+                    StudentCount = c.StudentCount,
+                    Description = c.Description
+                })
+                .ToList();
+
+            Classes = paginatedClasses;
         }
 
         public IActionResult OnPostAdd()
@@ -108,7 +157,7 @@ namespace LabProject.Pages
                 return Page();
             }
 
-            var existingClass = Classes.FirstOrDefault(c => c.Id == editId);
+            var existingClass = _classes.FirstOrDefault(c => c.Id == editId);
             if (existingClass != null)
             {
                 // Manually bind form values
@@ -131,10 +180,10 @@ namespace LabProject.Pages
 
         public IActionResult OnPostDelete(int id)
         {
-            var classToDelete = Classes.FirstOrDefault(c => c.Id == id);
+            var classToDelete = _classes.FirstOrDefault(c => c.Id == id);
             if (classToDelete != null)
             {
-                Classes.Remove(classToDelete);
+                _classes.Remove(classToDelete);
             }
             return RedirectToPage();
         }
