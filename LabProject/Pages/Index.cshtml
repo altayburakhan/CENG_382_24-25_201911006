@@ -13,18 +13,18 @@
                     <h5 class="card-title mb-0">Filters</h5>
                 </div>
                 <div class="card-body">
-                    <form method="get">
-                        <div class="mb-3">
+                    <form method="get" class="filter-form">
+                        <div class="form-group">
                             <label for="classNameFilter" class="form-label">Class Name</label>
                             <input type="text" class="form-control" id="classNameFilter" name="classNameFilter" 
                                    value="@Model.ClassNameFilter" placeholder="Search by class name">
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="minStudentCount" class="form-label">Min Student Count</label>
                             <input type="number" class="form-control" id="minStudentCount" name="minStudentCount" 
                                    value="@Model.MinStudentCount" min="0">
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="maxStudentCount" class="form-label">Max Student Count</label>
                             <input type="number" class="form-control" id="maxStudentCount" name="maxStudentCount" 
                                    value="@Model.MaxStudentCount" min="0">
@@ -41,22 +41,22 @@
                 </div>
                 <div class="card-body">
                     <form method="post">
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label asp-for="NewClass.ClassName" class="form-label">Class Name</label>
                             <input asp-for="NewClass.ClassName" class="form-control" required>
                             <span asp-validation-for="NewClass.ClassName" class="text-danger"></span>
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label asp-for="NewClass.StudentCount" class="form-label">Student Count</label>
                             <input asp-for="NewClass.StudentCount" class="form-control" type="number" min="1" max="100" required>
                             <span asp-validation-for="NewClass.StudentCount" class="text-danger"></span>
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label asp-for="NewClass.Description" class="form-label">Description</label>
                             <textarea asp-for="NewClass.Description" class="form-control" required></textarea>
                             <span asp-validation-for="NewClass.Description" class="text-danger"></span>
                         </div>
-                        <button type="submit" asp-page-handler="Add" class="btn btn-success w-100">Add Class</button>
+                        <button type="submit" asp-page-handler="Add" class="btn btn-primary w-100">Add Class</button>
                     </form>
                 </div>
             </div>
@@ -152,17 +152,17 @@
                 <form method="post">
                     <div class="modal-body">
                         <input type="hidden" asp-for="EditingClass.Id" />
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label asp-for="EditingClass.ClassName" class="form-label">Class Name</label>
                             <input asp-for="EditingClass.ClassName" class="form-control" required>
                             <span asp-validation-for="EditingClass.ClassName" class="text-danger"></span>
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label asp-for="EditingClass.StudentCount" class="form-label">Student Count</label>
                             <input asp-for="EditingClass.StudentCount" class="form-control" type="number" min="1" max="100" required>
                             <span asp-validation-for="EditingClass.StudentCount" class="text-danger"></span>
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label asp-for="EditingClass.Description" class="form-label">Description</label>
                             <textarea asp-for="EditingClass.Description" class="form-control" required></textarea>
                             <span asp-validation-for="EditingClass.Description" class="text-danger"></span>
