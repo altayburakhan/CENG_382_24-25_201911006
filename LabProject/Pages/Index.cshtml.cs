@@ -4,18 +4,17 @@ using LabProject.Models;
 using System.Linq;
 using LabProject.Helpers;
 using System.Text.Json;
+using LabProject.Services;
 
 namespace LabProject.Pages
 {
     public class IndexModel : PageModel
     {
         private readonly ILogger<IndexModel> _logger;
+        private readonly DataService _dataService;
         public List<ClassInformationTable> Classes { get; set; } = new();
         public ClassInformationTable NewClass { get; set; } = new();
         public ClassInformationTable? EditingClass { get; set; }
-        private static int _nextId = 1;
-        private static List<ClassInformationTable> _classes = new();
-        private static bool _isInitialized = false;
 
         // Pagination properties
         [BindProperty(SupportsGet = true)]
@@ -36,39 +35,22 @@ namespace LabProject.Pages
         // Export properties
         [BindProperty(SupportsGet = true)]
         public bool ExportAll { get; set; }
-
         [BindProperty(SupportsGet = true)]
         public List<string> SelectedProperties { get; set; } = new();
 
-        public IndexModel(ILogger<IndexModel> logger)
+        public IndexModel(ILogger<IndexModel> logger, DataService dataService)
         {
             _logger = logger;
-            if (!_isInitialized)
-            {
-                GenerateSampleData();
-                _isInitialized = true;
-            }
-        }
-
-        private void GenerateSampleData()
-        {
-            var random = new Random();
-            for (int i = 1; i <= 100; i++)
-            {
-                _classes.Add(new ClassInformationTable
-                {
-                    Id = i,
-                    ClassName = $"Class {i}",
-                    StudentCount = random.Next(1, 100),
-                    Description = $"Description for Class {i}"
-                });
-            }
+            _dataService = dataService;
         }
 
         public IActionResult OnGet()
         {
+            // Get all classes from DataService
+            var allClasses = _dataService.GetClasses();
+
             // Filter classes based on input
-            var filteredClasses = _classes.AsQueryable();
+            var filteredClasses = allClasses.AsQueryable();
 
             if (!string.IsNullOrEmpty(ClassNameFilter))
             {
@@ -86,7 +68,8 @@ namespace LabProject.Pages
             }
 
             // Calculate pagination
-            TotalPages = (int)Math.Ceiling(filteredClasses.Count() / (double)PageSize);
+            TotalItems = filteredClasses.Count();
+            TotalPages = (int)Math.Ceiling(TotalItems / (double)PageSize);
             CurrentPage = Math.Max(1, Math.Min(CurrentPage, TotalPages));
 
             // Apply pagination
@@ -98,14 +81,35 @@ namespace LabProject.Pages
             // Handle JSON export
             if (ExportAll)
             {
-                var exportData = filteredClasses.ToList();
-                var json = Utils.Instance.ExportToJson(exportData, SelectedProperties);
-                
-                return new FileContentResult(
-                    System.Text.Encoding.UTF8.GetBytes(json),
-                    "application/json")
+                object exportData;
+                if (SelectedProperties.Any())
                 {
-                    FileDownloadName = $"classes_export_{DateTime.Now:yyyyMMddHHmmss}.json"
+                    var dictList = new List<Dictionary<string, object>>();
+                    foreach (var item in Classes)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (var prop in SelectedProperties)
+                        {
+                            var value = item.GetType().GetProperty(prop)?.GetValue(item);
+                            dict[prop] = value ?? string.Empty;
+                        }
+                        dictList.Add(dict);
+                    }
+                    exportData = dictList;
+                }
+                else
+                {
+                    exportData = Classes;
+                }
+
+                var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+                return new FileContentResult(System.Text.Encoding.UTF8.GetBytes(json), "application/json")
+                {
+                    FileDownloadName = "classes_export.json"
                 };
             }
 
@@ -116,20 +120,10 @@ namespace LabProject.Pages
         {
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Invalid model state: {errors}", 
-                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
                 return Page();
             }
 
-            var newClass = new ClassInformationTable
-            {
-                Id = _nextId++,
-                ClassName = NewClass.ClassName,
-                StudentCount = NewClass.StudentCount,
-                Description = NewClass.Description
-            };
-
-            _classes.Add(newClass);
+            _dataService.AddClass(NewClass);
             return RedirectToPage();
         }
 
@@ -140,24 +134,13 @@ namespace LabProject.Pages
                 return Page();
             }
 
-            var existingClass = _classes.FirstOrDefault(c => c.Id == EditingClass?.Id);
-            if (existingClass != null)
-            {
-                existingClass.ClassName = EditingClass?.ClassName ?? string.Empty;
-                existingClass.StudentCount = EditingClass?.StudentCount ?? 0;
-                existingClass.Description = EditingClass?.Description ?? string.Empty;
-            }
-
+            _dataService.UpdateClass(EditingClass!);
             return RedirectToPage();
         }
 
         public IActionResult OnPostDelete(int id)
         {
-            var classToDelete = _classes.FirstOrDefault(c => c.Id == id);
-            if (classToDelete != null)
-            {
-                _classes.Remove(classToDelete);
-            }
+            _dataService.DeleteClass(id);
             return RedirectToPage();
         }
     }
