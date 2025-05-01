@@ -25,8 +25,25 @@
                             <a class="nav-link text-light" asp-area="" asp-page="/Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                            <a class="nav-link text-light" asp-area="" asp-page="/Privacy">Privacy</a>
                         </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (Context.Session.GetString("username") != null)
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link text-light me-3">Welcome, @Context.Session.GetString("username")</span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-outline-light" asp-page="/Logout">Logout</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="btn btn-outline-light" asp-page="/Login">Login</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>

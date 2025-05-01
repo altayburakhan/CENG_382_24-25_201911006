@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using LabProject.Helpers;
 
 namespace LabProject.Pages;
 
@@ -12,8 +13,15 @@ public class PrivacyModel : PageModel
         _logger = logger;
     }
 
-    public void OnGet()
+    public IActionResult OnGet()
     {
+        // Check authentication
+        if (!AuthHelper.IsAuthenticated(HttpContext))
+        {
+            return RedirectToPage("/Login");
+        }
+
+        return Page();
     }
 }
 

@@ -61,6 +61,12 @@ namespace LabProject.Pages
 
         public IActionResult OnGet()
         {
+            // Check authentication
+            if (!AuthHelper.IsAuthenticated(HttpContext))
+            {
+                return RedirectToPage("/Login");
+            }
+            
             // Get all classes from DataService
             var allClasses = _dataService.GetClasses();
 
@@ -174,6 +180,12 @@ namespace LabProject.Pages
 
         public IActionResult OnPostAdd()
         {
+            // Check authentication
+            if (!AuthHelper.IsAuthenticated(HttpContext))
+            {
+                return RedirectToPage("/Login");
+            }
+
             if (!ModelState.IsValid)
             {
                 return Page();
@@ -195,6 +207,12 @@ namespace LabProject.Pages
 
         public IActionResult OnPostEdit()
         {
+            // Check authentication
+            if (!AuthHelper.IsAuthenticated(HttpContext))
+            {
+                return RedirectToPage("/Login");
+            }
+
             if (!ModelState.IsValid)
             {
                 return Page();
@@ -216,9 +234,15 @@ namespace LabProject.Pages
 
         public IActionResult OnPostDelete(int id)
         {
+            // Check authentication
+            if (!AuthHelper.IsAuthenticated(HttpContext))
+            {
+                return RedirectToPage("/Login");
+            }
+
             _dataService.DeleteClass(id);
-            
-            // Preserve all query parameters for delete operation too
+
+            // Preserve all query parameters
             return RedirectToPage(new
             {
                 currentPage = CurrentPage,
