@@ -1,5 +1,5 @@
 ﻿@page
-@model IndexModel
+@model LabProject.Pages.IndexModel
 @{
     ViewData["Title"] = "Class Information";
 }
@@ -58,6 +58,9 @@
         </div>
     </div>
 
+    <!-- Add Class Form -->
+    <!-- Test için eklenen form kaldırıldı -->
+
     <!-- Class Table -->
     <div class="card">
         <div class="card-body">
@@ -65,62 +68,30 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th onclick="exportColumn('ClassName')" style="cursor: pointer;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <a href="?sortBy=ClassName&sortOrder=@(Model.SortBy == "ClassName" && Model.SortOrder == "asc" ? "desc" : "asc")" class="text-decoration-none text-primary" onclick="event.stopPropagation()">
-                                        Class Name
-                                        @if (Model.SortBy == "ClassName")
-                                        {
-                                            <i class="bi bi-arrow-@(Model.SortOrder == "asc" ? "up" : "down")"></i>
-                                        }
-                                    </a>
-                                    <i class="bi bi-download text-muted ms-2"></i>
-                                </div>
-                            </th>
-                            <th onclick="exportColumn('StudentCount')" style="cursor: pointer;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <a href="?sortBy=StudentCount&sortOrder=@(Model.SortBy == "StudentCount" && Model.SortOrder == "asc" ? "desc" : "asc")" class="text-decoration-none text-primary" onclick="event.stopPropagation()">
-                                        Student Count
-                                        @if (Model.SortBy == "StudentCount")
-                                        {
-                                            <i class="bi bi-arrow-@(Model.SortOrder == "asc" ? "up" : "down")"></i>
-                                        }
-                                    </a>
-                                    <i class="bi bi-download text-muted ms-2"></i>
-                                </div>
-                            </th>
-                            <th onclick="exportColumn('Description')" style="cursor: pointer;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <a href="?sortBy=Description&sortOrder=@(Model.SortBy == "Description" && Model.SortOrder == "asc" ? "desc" : "asc")" class="text-decoration-none text-primary" onclick="event.stopPropagation()">
-                                        Description
-                                        @if (Model.SortBy == "Description")
-                                        {
-                                            <i class="bi bi-arrow-@(Model.SortOrder == "asc" ? "up" : "down")"></i>
-                                        }
-                                    </a>
-                                    <i class="bi bi-download text-muted ms-2"></i>
-                                </div>
-                            </th>
+                            <th>Name</th>
+                            <th>Person Count</th>
+                            <th>Description</th>
+                            <th>Is Active</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var classInfo in Model.Classes)
                         {
-                            <tr class="selectable-row" data-id="@classInfo.Id" onclick="toggleRowSelection(this)">
-                                <td>@classInfo.ClassName</td>
-                                <td>@classInfo.StudentCount</td>
+                            <tr>
+                                <td>@classInfo.Name</td>
+                                <td>@classInfo.PersonCount</td>
                                 <td>@classInfo.Description</td>
-                                <td onclick="event.stopPropagation()">
+                                <td>@(classInfo.IsActive ? "Yes" : "No")</td>
+                                <td>
                                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editClassModal" 
-                                            data-id="@classInfo.Id" data-name="@classInfo.ClassName" 
-                                            data-count="@classInfo.StudentCount" data-desc="@classInfo.Description">
+                                            data-id="@classInfo.Id" data-name="@classInfo.Name" 
+                                            data-count="@classInfo.PersonCount" data-desc="@classInfo.Description" data-active="@classInfo.IsActive">
                                         <i class="bi bi-pencil"></i> Edit
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteClassModal" 
-                                            data-id="@classInfo.Id" data-name="@classInfo.ClassName">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@classInfo.Id" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Delete</button>
+                                    </form>
                                 </td>
                             </tr>
                         }
@@ -163,37 +134,43 @@
 </div>
 
 <!-- Add Class Modal -->
+@if (TempData["AddError"] != null)
+{
+    <div class="alert alert-danger">@TempData["AddError"]</div>
+}
 <div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post">
-                <input type="hidden" name="currentPage" value="@Model.CurrentPage" />
-                <input type="hidden" name="classNameFilter" value="@Model.ClassNameFilter" />
-                <input type="hidden" name="minStudentCount" value="@Model.MinStudentCount" />
-                <input type="hidden" name="maxStudentCount" value="@Model.MaxStudentCount" />
-                <input type="hidden" name="sortBy" value="@Model.SortBy" />
-                <input type="hidden" name="sortOrder" value="@Model.SortOrder" />
+            <form method="post" asp-page-handler="Add">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addClassModalLabel">Add New Class</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="addClassName" class="form-label">Class Name</label>
-                        <input type="text" class="form-control" id="addClassName" name="ClassName" required>
+                        <label asp-for="NewClass.Name" class="form-label"></label>
+                        <input asp-for="NewClass.Name" class="form-control" required />
+                        <span asp-validation-for="NewClass.Name" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label for="addStudentCount" class="form-label">Student Count</label>
-                        <input type="number" class="form-control" id="addStudentCount" name="StudentCount" required>
+                        <label asp-for="NewClass.PersonCount" class="form-label"></label>
+                        <input asp-for="NewClass.PersonCount" class="form-control" required />
+                        <span asp-validation-for="NewClass.PersonCount" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label for="addDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="addDescription" name="Description" rows="3"></textarea>
+                        <label asp-for="NewClass.Description" class="form-label"></label>
+                        <textarea asp-for="NewClass.Description" class="form-control"></textarea>
+                        <span asp-validation-for="NewClass.Description" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewClass.IsActive" class="form-label"></label>
+                        <input asp-for="NewClass.IsActive" type="checkbox" />
+                        <span asp-validation-for="NewClass.IsActive" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary" asp-page-handler="Add">Add Class</button>
+                    <button type="submit" class="btn btn-primary">Add Class</button>
                 </div>
             </form>
         </div>
@@ -204,63 +181,37 @@
 <div class="modal fade" id="editClassModal" tabindex="-1" aria-labelledby="editClassModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post">
-                <input type="hidden" id="editClassId" name="EditClass.Id">
-                <input type="hidden" name="currentPage" value="@Model.CurrentPage" />
-                <input type="hidden" name="classNameFilter" value="@Model.ClassNameFilter" />
-                <input type="hidden" name="minStudentCount" value="@Model.MinStudentCount" />
-                <input type="hidden" name="maxStudentCount" value="@Model.MaxStudentCount" />
-                <input type="hidden" name="sortBy" value="@Model.SortBy" />
-                <input type="hidden" name="sortOrder" value="@Model.SortOrder" />
+            <form method="post" asp-page-handler="Edit">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editClassModalLabel">Edit Class</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" asp-for="EditClass.Id" id="editClassId" />
                     <div class="mb-3">
-                        <label for="editClassName" class="form-label">Class Name</label>
-                        <input type="text" class="form-control" id="editClassName" name="EditClass.ClassName" required>
+                        <label asp-for="EditClass.Name" class="form-label"></label>
+                        <input asp-for="EditClass.Name" class="form-control" id="editClassName" required />
+                        <span asp-validation-for="EditClass.Name" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label for="editStudentCount" class="form-label">Student Count</label>
-                        <input type="number" class="form-control" id="editStudentCount" name="EditClass.StudentCount" required>
+                        <label asp-for="EditClass.PersonCount" class="form-label"></label>
+                        <input asp-for="EditClass.PersonCount" class="form-control" id="editClassCount" required />
+                        <span asp-validation-for="EditClass.PersonCount" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label for="editDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="editDescription" name="EditClass.Description" rows="3"></textarea>
+                        <label asp-for="EditClass.Description" class="form-label"></label>
+                        <textarea asp-for="EditClass.Description" class="form-control" id="editClassDesc"></textarea>
+                        <span asp-validation-for="EditClass.Description" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="EditClass.IsActive" class="form-label"></label>
+                        <input asp-for="EditClass.IsActive" type="checkbox" id="editClassActive" />
+                        <span asp-validation-for="EditClass.IsActive" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary" asp-page-handler="Edit">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Class Modal -->
-<div class="modal fade" id="deleteClassModal" tabindex="-1" aria-labelledby="deleteClassModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post">
-                <input type="hidden" id="deleteClassId" name="Id">
-                <input type="hidden" name="currentPage" value="@Model.CurrentPage" />
-                <input type="hidden" name="classNameFilter" value="@Model.ClassNameFilter" />
-                <input type="hidden" name="minStudentCount" value="@Model.MinStudentCount" />
-                <input type="hidden" name="maxStudentCount" value="@Model.MaxStudentCount" />
-                <input type="hidden" name="sortBy" value="@Model.SortBy" />
-                <input type="hidden" name="sortOrder" value="@Model.SortOrder" />
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteClassModalLabel">Delete Class</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to delete the class "<span id="deleteClassName"></span>"?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger" asp-page-handler="Delete">Delete</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -268,75 +219,16 @@
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script>
-        // Edit modal handler
-        document.getElementById('editClassModal').addEventListener('show.bs.modal', function (event) {
+        var editModal = document.getElementById('editClassModal');
+        editModal.addEventListener('show.bs.modal', function (event) {
             var button = event.relatedTarget;
-            var id = button.getAttribute('data-id');
-            var name = button.getAttribute('data-name');
-            var count = button.getAttribute('data-count');
-            var desc = button.getAttribute('data-desc');
-
-            var modal = this;
-            modal.querySelector('#editClassId').value = id;
-            modal.querySelector('#editClassName').value = name;
-            modal.querySelector('#editStudentCount').value = count;
-            modal.querySelector('#editDescription').value = desc;
+            document.getElementById('editClassId').value = button.getAttribute('data-id');
+            document.getElementById('editClassName').value = button.getAttribute('data-name');
+            document.getElementById('editClassCount').value = button.getAttribute('data-count');
+            document.getElementById('editClassDesc').value = button.getAttribute('data-desc');
+            document.getElementById('editClassActive').checked = (button.getAttribute('data-active') === 'True' || button.getAttribute('data-active') === 'true');
         });
-
-        // Delete modal handler
-        document.getElementById('deleteClassModal').addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var id = button.getAttribute('data-id');
-            var name = button.getAttribute('data-name');
-
-            var modal = this;
-            modal.querySelector('#deleteClassId').value = id;
-            modal.querySelector('#deleteClassName').textContent = name;
-        });
-
-        // Row selection functionality
-        function toggleRowSelection(row) {
-            row.classList.toggle('selected');
-            updateSelectedCount();
-        }
-
-        function updateSelectedCount() {
-            const selectedCount = document.querySelectorAll('.selectable-row.selected').length;
-            const exportButton = document.querySelector('#exportForm button.btn-success');
-            exportButton.innerHTML = `<i class="bi bi-download"></i> Export Selected (${selectedCount}) to JSON`;
-        }
-
-        function exportSelected() {
-            const selectedRows = document.querySelectorAll('.selectable-row.selected');
-            if (selectedRows.length === 0) {
-                // If nothing is selected, export all
-                document.getElementById('exportAll').value = 'true';
-            } else {
-                const selectedIds = Array.from(selectedRows).map(row => row.dataset.id);
-                document.getElementById('selectedIds').value = selectedIds.join(',');
-            }
-            document.getElementById('exportForm').submit();
-        }
-
-        function exportColumn(columnName) {
-            document.getElementById('exportColumn').value = columnName;
-            document.getElementById('exportForm').submit();
-        }
     </script>
-
-    <style>
-        .selectable-row {
-            cursor: pointer;
-        }
-        .selectable-row:hover {
-            background-color: rgba(0, 123, 255, 0.1) !important;
-        }
-        .selectable-row.selected {
-            background-color: rgba(0, 123, 255, 0.2) !important;
-        }
-        th:hover .bi-download {
-            color: #0d6efd !important;
-        }
-    </style>
 }

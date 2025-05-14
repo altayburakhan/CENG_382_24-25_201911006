@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using LabProject.Models;
+using LabProject.Data;
+using Microsoft.EntityFrameworkCore;
+using LabProject.Helpers;
 using System.Linq;
 using LabProject.Helpers;
 using System.Text.Json;
@@ -10,11 +13,13 @@ namespace LabProject.Pages
 {
     public class IndexModel : PageModel
     {
+        private readonly SchoolDbContext _context;
         private readonly ILogger<IndexModel> _logger;
         private readonly DataService _dataService;
-        public List<ClassInformationTable> Classes { get; set; } = new();
-        public ClassInformationTable NewClass { get; set; } = new();
-        public ClassInformationTable? EditingClass { get; set; }
+        public List<Class> Classes { get; set; } = new();
+        [BindProperty]
+        public Class NewClass { get; set; } = new();
+        public Class EditClass { get; set; } = new();
 
         // Pagination properties
         [BindProperty(SupportsGet = true)]
@@ -34,9 +39,9 @@ namespace LabProject.Pages
 
         // Sorting properties
         [BindProperty(SupportsGet = true)]
-        public string SortBy { get; set; } = "ClassName";
+        public string? SortBy { get; set; } = "ClassName";
         [BindProperty(SupportsGet = true)]
-        public string SortOrder { get; set; } = "asc";
+        public string? SortOrder { get; set; } = "asc";
 
         // Export property
         [BindProperty(SupportsGet = true)]
@@ -44,214 +49,97 @@ namespace LabProject.Pages
         [BindProperty(SupportsGet = true)]
         public List<string> SelectedProperties { get; set; } = new();
 
-        [BindProperty]
-        public ClassInformationTable EditClass { get; set; } = new();
-
         [BindProperty(SupportsGet = true)]
         public string? SelectedIds { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string? ExportColumn { get; set; }
 
-        public IndexModel(ILogger<IndexModel> logger, DataService dataService)
+        public IndexModel(SchoolDbContext context, ILogger<IndexModel> logger, DataService dataService)
         {
+            _context = context;
             _logger = logger;
             _dataService = dataService;
         }
 
-        public IActionResult OnGet()
+        public async Task<IActionResult> OnGetAsync()
         {
-            // Check authentication
             if (!AuthHelper.IsAuthenticated(HttpContext))
-            {
                 return RedirectToPage("/Login");
-            }
-            
-            // Get all classes from DataService
-            var allClasses = _dataService.GetClasses();
 
-            // Filter classes based on input
-            var filteredClasses = allClasses.AsQueryable();
-
-            if (!string.IsNullOrEmpty(ClassNameFilter))
+            // Eğer veritabanında hiç kayıt yoksa örnek veri ekle
+            if (!await _context.Classes.AnyAsync())
             {
-                filteredClasses = filteredClasses.Where(c => c.ClassName.Contains(ClassNameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (MinStudentCount.HasValue)
-            {
-                filteredClasses = filteredClasses.Where(c => c.StudentCount >= MinStudentCount.Value);
-            }
-
-            if (MaxStudentCount.HasValue)
-            {
-                filteredClasses = filteredClasses.Where(c => c.StudentCount <= MaxStudentCount.Value);
-            }
-
-            // Apply sorting
-            var sortByLower = SortBy?.ToLower() ?? "classname";
-            var sortOrderLower = SortOrder.ToLower();
-
-            if (sortByLower == "classname")
-            {
-                filteredClasses = sortOrderLower == "asc"
-                    ? filteredClasses.OrderBy(c => c.ClassName)
-                    : filteredClasses.OrderByDescending(c => c.ClassName);
-            }
-            else if (sortByLower == "studentcount")
-            {
-                filteredClasses = sortOrderLower == "asc"
-                    ? filteredClasses.OrderBy(c => c.StudentCount)
-                    : filteredClasses.OrderByDescending(c => c.StudentCount);
-            }
-            else if (sortByLower == "description")
-            {
-                filteredClasses = sortOrderLower == "asc"
-                    ? filteredClasses.OrderBy(c => c.Description)
-                    : filteredClasses.OrderByDescending(c => c.Description);
-            }
-            else
-            {
-                filteredClasses = filteredClasses.OrderBy(c => c.ClassName);
-            }
-
-            // Handle JSON export
-            if (!string.IsNullOrEmpty(ExportColumn))
-            {
-                object columnData = ExportColumn.ToLower() switch
+                var random = new Random();
+                var sampleClasses = new List<Class>();
+                for (int i = 1; i <= 100; i++)
                 {
-                    "classname" => filteredClasses.Select(c => new { ClassName = c.ClassName }).ToList(),
-                    "studentcount" => filteredClasses.Select(c => new { StudentCount = c.StudentCount }).ToList(),
-                    "description" => filteredClasses.Select(c => new { Description = c.Description }).ToList(),
-                    _ => filteredClasses.Select(c => new { c.ClassName, c.StudentCount, c.Description }).ToList()
-                };
-
-                var json = JsonSerializer.Serialize(columnData, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-
-                return new FileContentResult(System.Text.Encoding.UTF8.GetBytes(json), "application/json")
-                {
-                    FileDownloadName = $"{ExportColumn.ToLower()}_export.json"
-                };
-            }
-            else if (ExportAll)
-            {
-                var json = JsonSerializer.Serialize(filteredClasses.ToList(), new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-
-                return new FileContentResult(System.Text.Encoding.UTF8.GetBytes(json), "application/json")
-                {
-                    FileDownloadName = "all_classes_export.json"
-                };
-            }
-            else if (!string.IsNullOrEmpty(SelectedIds))
-            {
-                var selectedIdList = SelectedIds.Split(',').Select(int.Parse).ToList();
-                var selectedClasses = filteredClasses.Where(c => selectedIdList.Contains(c.Id)).ToList();
-
-                var json = JsonSerializer.Serialize(selectedClasses, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-
-                return new FileContentResult(System.Text.Encoding.UTF8.GetBytes(json), "application/json")
-                {
-                    FileDownloadName = "selected_classes_export.json"
-                };
+                    sampleClasses.Add(new Class
+                    {
+                        Name = $"Class {i}",
+                        PersonCount = random.Next(1, 100),
+                        Description = $"Description for Class {i}",
+                        IsActive = true
+                    });
+                }
+                _context.Classes.AddRange(sampleClasses);
+                await _context.SaveChangesAsync();
             }
 
-            // Calculate pagination
-            TotalItems = filteredClasses.Count();
-            TotalPages = (int)Math.Ceiling(TotalItems / (double)PageSize);
-            CurrentPage = Math.Max(1, Math.Min(CurrentPage, TotalPages));
-
-            // Apply pagination
-            Classes = filteredClasses
-                .Skip((CurrentPage - 1) * PageSize)
-                .Take(PageSize)
-                .ToList();
-
+            Classes = await _context.Classes.ToListAsync();
             return Page();
         }
 
-        public IActionResult OnPostAdd()
+        public async Task<IActionResult> OnPostAddAsync()
         {
-            // Check authentication
+            Console.WriteLine($"Name: {NewClass.Name}, PersonCount: {NewClass.PersonCount}, Description: {NewClass.Description}, IsActive: {NewClass.IsActive}");
             if (!AuthHelper.IsAuthenticated(HttpContext))
-            {
                 return RedirectToPage("/Login");
-            }
 
             if (!ModelState.IsValid)
             {
-                return Page();
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                TempData["AddError"] = string.Join(" | ", errors);
+                return await OnGetAsync();
             }
 
-            _dataService.AddClass(NewClass);
-            
-            // Preserve all query parameters
-            return RedirectToPage(new
-            {
-                currentPage = CurrentPage,
-                classNameFilter = ClassNameFilter,
-                minStudentCount = MinStudentCount,
-                maxStudentCount = MaxStudentCount,
-                sortBy = SortBy,
-                sortOrder = SortOrder
-            });
+            _context.Classes.Add(NewClass);
+            await _context.SaveChangesAsync();
+            return RedirectToPage();
         }
 
-        public IActionResult OnPostEdit()
+        public async Task<IActionResult> OnPostEditAsync()
         {
-            // Check authentication
             if (!AuthHelper.IsAuthenticated(HttpContext))
-            {
                 return RedirectToPage("/Login");
-            }
 
             if (!ModelState.IsValid)
-            {
-                return Page();
-            }
+                return await OnGetAsync();
 
-            _dataService.UpdateClass(EditClass);
+            var classToUpdate = await _context.Classes.FindAsync(EditClass.Id);
+            if (classToUpdate == null)
+                return NotFound();
 
-            // Preserve all query parameters
-            return RedirectToPage(new
-            {
-                currentPage = CurrentPage,
-                classNameFilter = ClassNameFilter,
-                minStudentCount = MinStudentCount,
-                maxStudentCount = MaxStudentCount,
-                sortBy = SortBy,
-                sortOrder = SortOrder
-            });
+            classToUpdate.Name = EditClass.Name;
+            classToUpdate.PersonCount = EditClass.PersonCount;
+            classToUpdate.Description = EditClass.Description;
+            classToUpdate.IsActive = EditClass.IsActive;
+            await _context.SaveChangesAsync();
+            return RedirectToPage();
         }
 
-        public IActionResult OnPostDelete(int id)
+        public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            // Check authentication
             if (!AuthHelper.IsAuthenticated(HttpContext))
-            {
                 return RedirectToPage("/Login");
-            }
 
-            _dataService.DeleteClass(id);
+            var classToDelete = await _context.Classes.FindAsync(id);
+            if (classToDelete == null)
+                return NotFound();
 
-            // Preserve all query parameters
-            return RedirectToPage(new
-            {
-                currentPage = CurrentPage,
-                classNameFilter = ClassNameFilter,
-                minStudentCount = MinStudentCount,
-                maxStudentCount = MaxStudentCount,
-                sortBy = SortBy,
-                sortOrder = SortOrder
-            });
+            _context.Classes.Remove(classToDelete);
+            await _context.SaveChangesAsync();
+            return RedirectToPage();
         }
     }
 }
